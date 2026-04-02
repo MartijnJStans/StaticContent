@@ -54,15 +54,12 @@
 
     $('.grid').each(function () {
 
-      // $('.grid').imagesLoaded( function() {
-      // images have loaded
       var $buttonGroup = $('.button-group');
       var $checked = $buttonGroup.find('.is-checked');
       var filterValue = $checked.attr('data-filter');
 
       var $grid = $('.grid').isotope({
         itemSelector: '.portfolio-item',
-        // layoutMode: 'fitRows',
         filter: filterValue
       });
 
@@ -85,14 +82,12 @@
           $(this).addClass('is-checked');
         });
       });
-      // });
 
     });
   }
 
   var initScrollNav = function () {
     var scroll = $(window).scrollTop();
-    console
 
     if (scroll >= 200) {
       $('.bg-color').addClass("bg-secondary");
@@ -109,9 +104,7 @@
     })
   }
 
-  // ------------------------------------------------------------------------------ //
   // Overlay Menu Navigation
-  // ------------------------------------------------------------------------------ //
   var overlayMenu = function () {
 
     if (!$('.nav-overlay').length) {
@@ -137,6 +130,7 @@
     };
     init();
   }
+
   $(document).ready(function () {
     initSlider();
     initScrollNav();
@@ -153,133 +147,129 @@
       $('.sidebar-menu').toggleClass('open');
     })
 
-  }); // End of a document
+  }); // End of document ready
 
-  $(window).load(function () {
+  $(window).on('load', function () {
     initIsotope();
   });
 
-  $(window).scroll(function () {
+  $(window).on('scroll', function () {
     initScrollNav();
   });
 
 })(jQuery);
 
+// Email Contact Form
+$(document).ready(function() {
+  // Validation functions
+  function validateEmail(email) {
+    var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  }
 
-  // ------------------------------------------------------------------------------ //
-  // Email Contact Form
-  // ------------------------------------------------------------------------------ //
+  function showError($field, message) {
+    $field.next('.error-message').text(message).show();
+  }
 
-  $(document).ready(function() {
-    // Validation functions
-    function validateEmail(email) {
-      var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return re.test(email);
+  function hideError($field) {
+    $field.next('.error-message').hide();
+  }
+
+  // Real-time validation
+  $('#name').on('blur', function() {
+    var $this = $(this);
+    if ($this.val().trim() === '') {
+      showError($this, 'Name is required.');
+    } else {
+      hideError($this);
+    }
+  });
+
+  $('#email').on('blur input', function() {
+    var $this = $(this);
+    var email = $this.val().trim();
+    if (email === '') {
+      showError($this, 'Email is required.');
+    } else if (!validateEmail(email)) {
+      showError($this, 'Please enter a valid email address.');
+    } else {
+      hideError($this);
+    }
+  });
+
+  $('#message').on('blur', function() {
+    var $this = $(this);
+    if ($this.val().trim() === '') {
+      showError($this, 'Message is required.');
+    } else {
+      hideError($this);
+    }
+  });
+
+  $('#contactForm').on('submit', function(e) {
+    e.preventDefault();
+    var $form = $(this);
+    var $btn = $('#submitBtn');
+    var $message = $('#formMessage');
+
+    // Clear previous message
+    $message.hide().removeClass('alert alert-success alert-danger');
+
+    // Validate all fields
+    var isValid = true;
+    var $name = $('#name');
+    var $email = $('#email');
+    var $msg = $('#message');
+
+    if ($name.val().trim() === '') {
+      showError($name, 'Name is required.');
+      isValid = false;
+    }
+    if ($email.val().trim() === '') {
+      showError($email, 'Email is required.');
+      isValid = false;
+    } else if (!validateEmail($email.val().trim())) {
+      showError($email, 'Please enter a valid email address.');
+      isValid = false;
+    }
+    if ($msg.val().trim() === '') {
+      showError($msg, 'Message is required.');
+      isValid = false;
     }
 
-    function showError($field, message) {
-      $field.next('.error-message').text(message).show();
+    if (!isValid) {
+      $message.addClass('alert alert-danger').text('Please correct the errors above.').show();
+      return;
     }
 
-    function hideError($field) {
-      $field.next('.error-message').hide();
-    }
+    // Disable button
+    $btn.prop('disabled', true).text('Sending...');
 
-    // Real-time validation
-    $('#name').on('blur', function() {
-      var $this = $(this);
-      if ($this.val().trim() === '') {
-        showError($this, 'Name is required.');
-      } else {
-        hideError($this);
-      }
-    });
+    // Serialize form data
+    var formData = $form.serialize();
 
-    $('#email').on('blur input', function() {
-      var $this = $(this);
-      var email = $this.val().trim();
-      if (email === '') {
-        showError($this, 'Email is required.');
-      } else if (!validateEmail(email)) {
-        showError($this, 'Please enter a valid email address.');
-      } else {
-        hideError($this);
-      }
-    });
-
-    $('#message').on('blur', function() {
-      var $this = $(this);
-      if ($this.val().trim() === '') {
-        showError($this, 'Message is required.');
-      } else {
-        hideError($this);
-      }
-    });
-
-    $('#contactForm').on('submit', function(e) {
-      e.preventDefault();
-      var $form = $(this);
-      var $btn = $('#submitBtn');
-      var $message = $('#formMessage');
-
-      // Clear previous message
-      $message.hide().removeClass('alert alert-success alert-danger');
-
-      // Validate all fields
-      var isValid = true;
-      var $name = $('#name');
-      var $email = $('#email');
-      var $msg = $('#message');
-
-      if ($name.val().trim() === '') {
-        showError($name, 'Name is required.');
-        isValid = false;
-      }
-      if ($email.val().trim() === '') {
-        showError($email, 'Email is required.');
-        isValid = false;
-      } else if (!validateEmail($email.val().trim())) {
-        showError($email, 'Please enter a valid email address.');
-        isValid = false;
-      }
-      if ($msg.val().trim() === '') {
-        showError($msg, 'Message is required.');
-        isValid = false;
-      }
-
-      if (!isValid) {
-        $message.addClass('alert alert-danger').text('Please correct the errors above.').show();
-        return;
-      }
-
-      // Disable button
-      $btn.prop('disabled', true).text('Sending...');
-
-      // Serialize form data
-      var formData = $form.serialize();
-
-      // AJAX GET
-      $.ajax({
-        url: 'https://api.martijndevelops.nl/api/send-email',
-        type: 'GET',
-        data: formData,
-        dataType: 'json',
-        success: function(data) {
-          if (data.success) {
-            $message.addClass('alert alert-success').text('Thank you for your message! I\'ll get back to you soon.').show();
-            $form[0].reset();
-            // Hide error messages
-            $('.error-message').hide();
-          } else {
-            $message.addClass('alert alert-danger').text(data.error || 'An error occurred.').show();
-          }
-        },
-        error: function() {
-          $message.addClass('alert alert-danger').text('An error occurred. Please try again.').show();
-        },
-        complete: function() {
-          $btn.prop('disabled', false).text('Send Mail');
+    // AJAX GET
+    $.ajax({
+      url: 'https://api.martijndevelops.nl/api/send-email',
+      type: 'GET',
+      data: formData,
+      dataType: 'json',
+      success: function(data) {
+        if (data.success) {
+          $message.addClass('alert alert-success').text('Thank you for your message! I\'ll get back to you soon.').show();
+          $form[0].reset();
+          // Hide error messages
+          $('.error-message').hide();
+        } else {
+          $message.addClass('alert alert-danger').text(data.error || 'An error occurred.').show();
         }
-      });
+      },
+      error: function() {
+        $message.addClass('alert alert-danger').text('An error occurred. Please try again.').show();
+      },
+      complete: function() {
+        $btn.prop('disabled', false).text('Send Mail');
+      }
     });
-  }); 
+  });
+});
