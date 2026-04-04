@@ -250,7 +250,7 @@ $(document).ready(function() {
 
     // AJAX GET
     $.ajax({
-      url: 'https://api.martijndevelops.nl/api/mwp/send-email',
+      url: 'https://api.martijndevelops.nl/api/send-email',
       type: 'GET',
       data: formData,
       dataType: 'json',
