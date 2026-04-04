@@ -281,21 +281,15 @@ $(document).ready(function() {
         canonicalBody,
         'ce20a1b291ced8c3e162ae5f9e4810b8aeda1a9aa52c37eb354f7b18f627c08b'
       );
-  
-      // Build query string
-      const params = new URLSearchParams({
-        name,
-        email,
-        message
-      });
-  
-      // AJAX GET with signature header
+        // AJAX POST with JSON body
       $.ajax({
-        url: 'https://api.martijndevelops.nl/api/mwp/send-email?' + params.toString(),
-        type: 'GET',
+        url: 'https://api.martijndevelops.nl/api/mwp/send-email',
+        type: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'x-mwp-signature': signature
         },
+        data: JSON.stringify({ name, email, message }),
         dataType: 'json',
         success: function(data) {
           if (data.success) {
