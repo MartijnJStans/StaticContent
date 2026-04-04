@@ -159,6 +159,28 @@
 
 })(jQuery);
 
+// Generate HMAC signature for in-transit protection
+async function generateHmacSignature(message, secret) {
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(secret);
+  const messageData = encoder.encode(message);
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  const signature = await crypto.subtle.sign('HMAC', key, messageData);
+  
+  return Array.from(new Uint8Array(signature))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+
 // Email Contact Form
 $(document).ready(function() {
   // Validation functions
@@ -206,21 +228,21 @@ $(document).ready(function() {
     }
   });
 
-  $('#contactForm').on('submit', function(e) {
+  $('#contactForm').on('submit', async function(e) {
     e.preventDefault();
     var $form = $(this);
     var $btn = $('#submitBtn');
     var $message = $('#formMessage');
-
+  
     // Clear previous message
     $message.hide().removeClass('alert alert-success alert-danger');
-
+  
     // Validate all fields
     var isValid = true;
     var $name = $('#name');
     var $email = $('#email');
     var $msg = $('#message');
-
+  
     if ($name.val().trim() === '') {
       showError($name, 'Name is required.');
       isValid = false;
@@ -236,40 +258,65 @@ $(document).ready(function() {
       showError($msg, 'Message is required.');
       isValid = false;
     }
-
+  
     if (!isValid) {
       $message.addClass('alert alert-danger').text('Please correct the errors above.').show();
       return;
     }
-
+  
     // Disable button
     $btn.prop('disabled', true).text('Sending...');
-
-    // Serialize form data
-    var formData = $form.serialize();
-
-    // AJAX GET
-    $.ajax({
-      url: 'https://api.martijndevelops.nl/api/mwp/send-email',
-      type: 'GET',
-      data: formData,
-      dataType: 'json',
-      success: function(data) {
-        if (data.success) {
-          $message.addClass('alert alert-success').text('Thank you for your message! I\'ll get back to you soon.').show();
-          $form[0].reset();
-          // Hide error messages
-          $('.error-message').hide();
-        } else {
-          $message.addClass('alert alert-danger').text(data.error || 'An error occurred.').show();
+  
+    try {
+      // Get form values
+      const name = $name.val().trim();
+      const email = $email.val().trim();
+      const message = $msg.val().trim();
+  
+      // Create canonical body (MUST match server-side)
+      const canonicalBody = JSON.stringify({ name, email, message });
+  
+      // Generate signature
+      const signature = await generateHmacSignature(
+        canonicalBody,
+        'ce20a1b291ced8c3e162ae5f9e4810b8aeda1a9aa52c37eb354f7b18f627c08b'
+      );
+  
+      // Build query string
+      const params = new URLSearchParams({
+        name,
+        email,
+        message
+      });
+  
+      // AJAX GET with signature header
+      $.ajax({
+        url: 'https://api.martijndevelops.nl/api/mwp/send-email?' + params.toString(),
+        type: 'GET',
+        headers: {
+          'x-mwp-signature': signature
+        },
+        dataType: 'json',
+        success: function(data) {
+          if (data.success) {
+            $message.addClass('alert alert-success').text('Thank you for your message! I\'ll get back to you soon.').show();
+            $form[0].reset();
+            $('.error-message').hide();
+          } else {
+            $message.addClass('alert alert-danger').text(data.error || 'An error occurred.').show();
+          }
+        },
+        error: function() {
+          $message.addClass('alert alert-danger').text('An error occurred. Please try again.').show();
+        },
+        complete: function() {
+          $btn.prop('disabled', false).text('Send Mail');
         }
-      },
-      error: function() {
-        $message.addClass('alert alert-danger').text('An error occurred. Please try again.').show();
-      },
-      complete: function() {
-        $btn.prop('disabled', false).text('Send Mail');
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Error generating signature:', error);
+      $message.addClass('alert alert-danger').text('An error occurred. Please try again.').show();
+      $btn.prop('disabled', false).text('Send Mail');
+    }
   });
 });
